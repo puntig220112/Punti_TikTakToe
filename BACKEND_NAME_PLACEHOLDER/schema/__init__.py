@@ -4,3 +4,4 @@ __all__ = [
     "EntityFull",
     "EntityBase",
 ]
+from ._game import GameCreate, GameResponse

@@ -1,10 +1,11 @@
+from __future__ import annotations
 import json
 import os
 
 
 class Config:
 
-    DB_CONNECTION_STRING: str = "sqlite:///:memory:"
+    DB_CONNECTION_STRING: str = "sqlite:///tictactoe.db"
 
     __instances: dict[str, Config] = {}
 

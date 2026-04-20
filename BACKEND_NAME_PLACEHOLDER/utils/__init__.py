@@ -5,3 +5,4 @@ __all__ = [
     "test",
     "user_main",
 ]
+from ._tictactoe_logic import check_win

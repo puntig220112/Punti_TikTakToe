@@ -9,3 +9,4 @@ __all__ = [
     "Person",
     "User",
 ]
+from ._game import Game
