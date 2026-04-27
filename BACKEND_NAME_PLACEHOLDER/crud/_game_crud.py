@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from BACKEND_NAME_PLACEHOLDER.model._game import Game
-from BACKEND_NAME_PLACEHOLDER.schema._game import GameCreate
+from BACKEND_NAME_PLACEHOLDER.schema._game import GameCreate, RemoteGame
 
 class GameCrud:
     def __init__(self, engine):
@@ -9,6 +9,15 @@ class GameCrud:
     def create_game(self, game_data: GameCreate):
         with Session(self._engine) as db:
             new_game = Game(player_x=game_data.player_name, board="         ", status="ongoing")
+            db.add(new_game)
+            db.commit()
+            db.refresh(new_game)
+            db.expunge(new_game)
+            return new_game
+        
+    def create_remote_game(self, game_data: RemoteGame):
+        with Session(self._engine) as db:
+            new_game = Game(player_x=game_data.player_x, player_o=game_data.player_o, board="         ", status="ongoing")
             db.add(new_game)
             db.commit()
             db.refresh(new_game)

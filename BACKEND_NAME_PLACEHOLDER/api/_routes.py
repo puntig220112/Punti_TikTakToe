@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, Depends
 from typing import List
 
 from BACKEND_NAME_PLACEHOLDER.engine import get_engine
-from BACKEND_NAME_PLACEHOLDER.schema._game import GameCreate, GameResponse
+from BACKEND_NAME_PLACEHOLDER.schema._game import GameCreate, GameResponse, RemoteGame
 from BACKEND_NAME_PLACEHOLDER.schema._user import UserCreate, UserResponse
 from BACKEND_NAME_PLACEHOLDER.crud._game_crud import GameCrud
 from BACKEND_NAME_PLACEHOLDER.crud._crud import Crud
@@ -32,15 +32,29 @@ def define_routes(app: FastAPI) -> None:
 
     # --- Game Endpoints ---
 
-    @app.post("/games", response_model=GameResponse)
+    @app.post("/localgame", response_model=GameResponse)
     def create_game(game: GameCreate):
         all_users = user_crud.get_users()
-        user_exists = any(u.user_name == game.player_name for u in all_users)
+        user_exists = any(u.user_name == game.player_name and u.password_hash == game.password for u in all_users)
         
         if not user_exists:
-            raise HTTPException(status_code=404, detail="User not found! Please register first.")
+            raise HTTPException(status_code=404, detail="Username or password incorrect.")
             
         return game_crud.create_game(game)
+    
+    @app.post("/remotegame", response_model=GameResponse)
+    def create_remote_game(game: RemoteGame):
+        all_users = user_crud.get_users()
+        user_x_exists = any(u.user_name == game.player_x and u.password_hash == game.player_x_password for u in all_users)
+        user_o_exists = any(u.user_name == game.player_o and u.password_hash == game.player_o_password for u in all_users)
+
+        if not user_x_exists:
+            raise HTTPException(status_code=404, detail="Player X username or password incorrect.")
+        if not user_o_exists:
+            raise HTTPException(status_code=404, detail="Player O username or password incorrect.")
+        
+        return game_crud.create_remote_game(game)
+
 
     @app.get("/games", response_model=List[GameResponse])
     def get_games():
@@ -54,11 +68,9 @@ def define_routes(app: FastAPI) -> None:
         return game
         
     @app.put("/games/{game_id}/move/{position}", response_model=GameResponse)
-    def make_move(game_id: int, position: int, char: str):
+    def make_move(game_id: int, position: int, user_name: str, password: str):
         if position < 1 or position > 9:
             raise HTTPException(status_code=400, detail="Invalid position")
-        if char not in ['X', 'O']:
-            raise HTTPException(status_code=400, detail="Invalid char")
             
         game = game_crud.get_game(game_id)
         if not game:
@@ -73,13 +85,31 @@ def define_routes(app: FastAPI) -> None:
         x_count = game.board.count('X')
         o_count = game.board.count('O')
         
-        if char == 'X' and x_count > o_count:
-            raise HTTPException(status_code=400, detail="It's O's turn")
-        if char == 'O' and x_count == o_count:
-            raise HTTPException(status_code=400, detail="It's X's turn")
+        # Automatisch ermitteln wer dran ist
+        if x_count > o_count:
+            expected_char = 'O'
+        else:
+            expected_char = 'X'
+
+        # Prüfen ob der richtige User den Zug macht
+        if expected_char == 'X':
+            if game.player_x != user_name:
+                raise HTTPException(status_code=400, detail="It's player X's turn! Wrong username.")
+        elif expected_char == 'O':
+            # Bei Localgames (wo player_o leer ist), muss zumindest einer existieren. 
+            # Aber bei Remotegames muss er exakt passen!
+            if game.player_o is not None and game.player_o != user_name:
+                raise HTTPException(status_code=400, detail="It's player O's turn! Wrong username.")
+
+        # Passwort-Check in der Datenbank
+        all_users = user_crud.get_users()
+        user_valid = any(u.user_name == user_name and u.password_hash == password for u in all_users)
+        
+        if not user_valid:
+            raise HTTPException(status_code=404, detail="Username or password incorrect.")
             
         new_board = list(game.board)
-        new_board[index] = char
+        new_board[index] = expected_char
         game.board = "".join(new_board)
         
         status = check_win(game.board)

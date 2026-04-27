@@ -27,7 +27,7 @@ def test_04_win_draw():
 
 # --- 5-7: SCHEMA TESTS ---
 def test_05_game_create_schema():
-    assert GameCreate(player_name="User1").player_name == "User1"
+    assert GameCreate(player_name="User1", password="123").player_name == "User1"
 
 def test_06_game_response_schema():
     assert GameResponse(id=1, player_x="User1", board="         ", status="ongoing").id == 1
@@ -56,17 +56,17 @@ def test_09_crud_get_users(engine):
 
 def test_10_crud_create_game(engine):
     g_crud = GameCrud(engine)
-    game = g_crud.create_game(GameCreate(player_name="u1"))
+    game = g_crud.create_game(GameCreate(player_name="u1", password="pw"))
     assert game.player_x == "u1"
 
 def test_11_crud_get_games(engine):
     g_crud = GameCrud(engine)
-    g_crud.create_game(GameCreate(player_name="u1"))
+    g_crud.create_game(GameCreate(player_name="u1", password="pw"))
     assert len(g_crud.get_all_games()) == 1
 
 def test_12_crud_update_game(engine):
     g_crud = GameCrud(engine)
-    game = g_crud.create_game(GameCreate(player_name="u1"))
+    game = g_crud.create_game(GameCreate(player_name="u1", password="pw"))
     game.board = "X        "
     upd = g_crud.update_game(game)
     assert upd.board == "X        "
@@ -113,24 +113,24 @@ def test_15_api_get_users(client):
 
 def test_16_api_create_game_fail_no_user(client):
     # Testiert unseren Check: Ohne User (den es nicht gibt) schlägt es fehl
-    resp = client.post("/games", json={"player_name": "Rando"})
+    resp = client.post("/localgame", json={"player_name": "Rando", "password": "wrong"})
     assert resp.status_code == 404
 
 def test_17_api_create_game_success(client):
     client.post("/users", json={"user_name": "api_u3", "password": "123", "first_name": "F", "last_name": "L"})
-    assert client.post("/games", json={"player_name": "api_u3"}).status_code == 200
+    assert client.post("/localgame", json={"player_name": "api_u3", "password": "123"}).status_code == 200
 
 def test_18_api_get_game(client):
     client.post("/users", json={"user_name": "api_u4", "password": "pw", "first_name": "F", "last_name": "L"})
-    g = client.post("/games", json={"player_name": "api_u4"}).json()
+    g = client.post("/localgame", json={"player_name": "api_u4", "password": "pw"}).json()
     assert client.get(f"/games/{g['id']}").status_code == 200
 
 def test_19_api_make_move_valid(client):
     client.post("/users", json={"user_name": "api_u5", "password": "pw", "first_name": "F", "last_name": "L"})
-    g = client.post("/games", json={"player_name": "api_u5"}).json()
-    assert client.put(f"/games/{g['id']}/move/1?char=X").status_code == 200
+    g = client.post("/localgame", json={"player_name": "api_u5", "password": "pw"}).json()
+    assert client.put(f"/games/{g['id']}/move/1?user_name=api_u5&password=pw").status_code == 200
 
 def test_20_api_make_move_invalid_pos(client):
     client.post("/users", json={"user_name": "api_u6", "password": "pw", "first_name": "F", "last_name": "L"})
-    g = client.post("/games", json={"player_name": "api_u6"}).json()
-    assert client.put(f"/games/{g['id']}/move/10?char=X").status_code == 400
+    g = client.post("/localgame", json={"player_name": "api_u6", "password": "pw"}).json()
+    assert client.put(f"/games/{g['id']}/move/10?user_name=api_u6&password=pw").status_code == 400
