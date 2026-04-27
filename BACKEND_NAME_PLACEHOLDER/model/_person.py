@@ -18,7 +18,7 @@ class Person(Entity):
 
     @last_name.setter
     def last_name(self, value: str) -> None:
-        self.name = value  # pyright: ignore [reportUnannotatedClassAttribute]
+        self.name = value
 
     @override
     def __repr__(self):

@@ -10,7 +10,7 @@ def test_entity_00() -> None:
     entity = Entity()
     entity.id = TEST_ID_01
     entity.name = TEST_NAME_01
-    entity_copy: Entity = eval(repr(entity))  # pyright: ignore [reportAny]
+    entity_copy: Entity = eval(repr(entity))
     assert type(entity_copy) == Entity
     assert str(entity) == str(entity_copy)
     assert REPR_01 == repr(entity)

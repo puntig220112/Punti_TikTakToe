@@ -22,7 +22,7 @@ def test_user_00() -> None:
 
     user.entity = entity
 
-    user_copy = eval(repr(user))  # pyright: ignore [reportAny]
+    user_copy = eval(repr(user))
 
     assert f"{user_copy}" == f"{user}"
 
@@ -44,7 +44,7 @@ def test_user_01() -> None:
 
     user.entity = entity
 
-    user_copy = eval(repr(user))  # pyright: ignore [reportAny]
+    user_copy = eval(repr(user))
 
     assert f"{user_copy}" == f"{user}"
 

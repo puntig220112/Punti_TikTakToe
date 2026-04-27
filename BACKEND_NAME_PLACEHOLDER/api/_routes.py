@@ -24,7 +24,6 @@ def define_routes(app: FastAPI) -> None:
         try:
             return user_crud.create_user(user)
         except Exception:
-            # Fängt z.B. doppelte Usernames ab
             raise HTTPException(status_code=400, detail="User could not be created. Username might be taken.")
 
     @app.get("/users", response_model=List[UserResponse])
@@ -35,7 +34,6 @@ def define_routes(app: FastAPI) -> None:
 
     @app.post("/games", response_model=GameResponse)
     def create_game(game: GameCreate):
-        # HTL-freundlicher Check ob der User überhaupt existiert
         all_users = user_crud.get_users()
         user_exists = any(u.user_name == game.player_name for u in all_users)
         

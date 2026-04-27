@@ -27,7 +27,6 @@ class GameCrud:
 
     def update_game(self, game: Game):
         with Session(self._engine) as db:
-            # Re-attach and update
             game_db = db.query(Game).filter(Game.id == game.id).first()
             game_db.board = game.board
             game_db.status = game.status

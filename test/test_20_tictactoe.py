@@ -81,9 +81,6 @@ def client():
     from sqlalchemy.pool import StaticPool
     from BACKEND_NAME_PLACEHOLDER.model import Base
 
-    # So wie du wolltest: ein simples :memory: mit Base.metadata (die DB selbst anlegen).
-    # Das StaticPool ist unser Trick, damit die FastAPI "Worker-Threads" exakt das 
-    # gleiche In-Memory DB-Objekt angreifen wie der Test selbst.
     engine = create_engine(
         "sqlite:///:memory:",
         connect_args={"check_same_thread": False},
@@ -91,7 +88,6 @@ def client():
     )
     Base.metadata.create_all(engine)
 
-    # Wir schieben absichtlich die selbst angelegte "engine" direkt unter:
     original_get_engine = routes_module.get_engine
     routes_module.get_engine = lambda: engine
 
