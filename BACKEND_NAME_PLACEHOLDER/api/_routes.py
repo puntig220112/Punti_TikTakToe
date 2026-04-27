@@ -35,8 +35,15 @@ def define_routes(app: FastAPI) -> None:
 
     @app.post("/games", response_model=GameResponse)
     def create_game(game: GameCreate):
-        return game_crud.create_game(game)
+        # HTL-freundlicher Check ob der User überhaupt existiert
+        all_users = user_crud.get_users()
+        user_exists = any(u.user_name == game.player_name for u in all_users)
         
+        if not user_exists:
+            raise HTTPException(status_code=404, detail="User not found! Please register first.")
+            
+        return game_crud.create_game(game)
+
     @app.get("/games", response_model=List[GameResponse])
     def get_games():
         return game_crud.get_all_games()
@@ -64,6 +71,14 @@ def define_routes(app: FastAPI) -> None:
         index = position - 1
         if game.board[index] != ' ':
             raise HTTPException(status_code=400, detail="Position taken")
+
+        x_count = game.board.count('X')
+        o_count = game.board.count('O')
+        
+        if char == 'X' and x_count > o_count:
+            raise HTTPException(status_code=400, detail="It's O's turn")
+        if char == 'O' and x_count == o_count:
+            raise HTTPException(status_code=400, detail="It's X's turn")
             
         new_board = list(game.board)
         new_board[index] = char
